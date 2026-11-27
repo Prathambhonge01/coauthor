@@ -1,8 +1,13 @@
 import pg from 'pg';
 import { config } from './config.js';
 
+const useSsl =
+  process.env.DATABASE_SSL === 'true' ||
+  /sslmode=require|\.render\.com/i.test(config.databaseUrl);
+
 export const pool = new pg.Pool({
   connectionString: config.databaseUrl,
+  ...(useSsl ? { ssl: { rejectUnauthorized: false } } : {}),
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,

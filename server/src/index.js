@@ -19,7 +19,20 @@ export function createServer() {
   app.disable('x-powered-by');
   app.set('trust proxy', 1);
   app.use(helmet());
-  if (config.corsOrigin) app.use(cors({ origin: config.corsOrigin.split(',') }));
+  if (config.corsOrigin) {
+    const allowed = config.corsOrigin.split(',').map((s) => s.trim()).filter(Boolean);
+    app.use(
+      cors({
+        origin: (origin, cb) => {
+          if (!origin || allowed.includes('*')) return cb(null, true);
+          const ok = allowed.some((pat) =>
+            pat.startsWith('*.') ? origin.endsWith(pat.slice(1)) : origin === pat
+          );
+          cb(ok ? null : new Error('CORS origin not allowed'), ok);
+        },
+      })
+    );
+  }
   app.use(express.json({ limit: '100kb' }));
 
   app.get('/health', async (_req, res) => {

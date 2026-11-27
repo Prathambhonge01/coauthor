@@ -3,12 +3,18 @@ export const getToken = () => localStorage.getItem(KEY);
 export const setToken = (t) => localStorage.setItem(KEY, t);
 export const clearToken = () => localStorage.removeItem(KEY);
 
-export const wsBase = () => `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/collab`;
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
+export const wsBase = () => {
+  if (import.meta.env.VITE_WS_URL) return import.meta.env.VITE_WS_URL.replace(/\/+$/, '');
+  if (API_BASE) return `${API_BASE.replace(/^http/i, 'ws')}/collab`;
+  return `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/collab`;
+};
 
 export async function api(path, { method = 'GET', body } = {}) {
   let res;
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(`${API_BASE}/api${path}`, {
       method,
       headers: { 'Content-Type': 'application/json', ...(getToken() && { Authorization: `Bearer ${getToken()}` }) },
       body: body === undefined ? undefined : JSON.stringify(body),

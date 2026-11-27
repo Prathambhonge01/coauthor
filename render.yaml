@@ -1,0 +1,36 @@
+databases:
+  - name: coauthor-db
+    plan: free
+    databaseName: coauthor
+    user: coauthor
+
+services:
+  - type: keyvalue
+    name: coauthor-redis
+    plan: free
+    maxmemoryPolicy: noeviction
+    ipAllowList: []
+
+  - type: web
+    name: coauthor-server
+    runtime: docker
+    plan: free
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coauthor-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: coauthor-redis
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: "*"
